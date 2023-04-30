@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"example/web-service-gin/authen"
 )
 
 type album struct {
@@ -56,11 +58,17 @@ func getAlbumByID(c *gin.Context) {
 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "album not found"})
 }
 
-func main() {
-	router := gin.Default()
+func setUpAlbumRouter(router *gin.Engine) {
 	router.GET("/albums", getAlbums)
 	router.GET("/albums/:id", getAlbumByID)
 	router.POST("/albums", postAlbums)
+}
+
+func main() {
+	router := gin.Default()
+	setUpAlbumRouter(router)
+
+	authen.GetUpAuthenRouter(router)
 
 	router.Run("localhost:8080")
 }
