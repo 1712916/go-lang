@@ -12,12 +12,12 @@ import (
 
 var sampleSecretKey = []byte("SecretKey")
 
-func generateJWT() (string, error) {
-	token := jwt.New(jwt.SigningMethodEdDSA)
+func generateJWT(u Credentials) (string, error) {
+	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["exp"] = time.Now().Add(10 * time.Minute)
 	claims["authorized"] = true
-	claims["user"] = "username"
+	claims["user"] = u.Username
 	tokenString, err := token.SignedString(sampleSecretKey)
 	if err != nil {
 		return "Signing Error", err
@@ -90,7 +90,19 @@ func sigin(c *gin.Context) {
 	for _, u := range users {
 		if u.Username == signinUser.Username {
 			if validateUser(u, signinUser) {
-				c.JSON(http.StatusOK, gin.H{"message": "login success!"})
+				token, err := generateJWT(u)
+
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"message": "StatusInternalServerError",
+						"error": err.Error(),
+						"token": token,
+					})
+					return
+				}
+
+				c.JSON(http.StatusOK, gin.H{"message": "login success!",
+					"token": token,
+				})
 				return
 			}
 			c.JSON(http.StatusUnauthorized, gin.H{"message": "StatusUnauthorized"})
@@ -100,4 +112,18 @@ func sigin(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusUnauthorized, gin.H{"message": "StatusUnauthorized"})
+}
+
+func Main() {
+	var u = Credentials{
+		Username: "VinhNT",
+		Password: "123123",
+	}
+	token, err := generateJWT(u)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("token : " + token)
+
 }
